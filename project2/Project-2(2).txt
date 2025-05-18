@@ -1,0 +1,1774 @@
+													Database Project 2 
+                                               
+                                                                                                             Group 22 
+
+
+
+Group members: 
+        - Ankita Patra 
+        - Aditya Maheshwari 
+        - Shruti Nehe 
+
+Academic Honesty - 
+
+
+
+
+We have done this project entirely on our own except for the tools/software acknowledged in the project report. We have neither copied the work of others nor shared our solution with anyone else. We understand that if we are involved in plagiarism or cheating, we will be required to sign an official form admitting to the violation, which will be added to our official university records. We also understand that we will receive a grade of 0, our letter grades will be reduced by one level for our first offense, and any additional offense of any kind will result in a grade of ‘F’. 
+Signatures :
+
+
+        Ankita Patra (B01101280): ankita_patra  
+        Aditya Maheshwari (B01103027): aditya_maheshwari 
+        Shruti Nehe (B01092927): shruti_nehe
+
+
+
+
+
+
+Write MongoDB queries for following 15 statements 
+1. List all U.S. vice presidents with their (full) names and total years of service as the vice president. 
+Query: 
+db.executives.aggregate([
+    { $unwind: "$terms" },
+    {
+      $match: {
+        "terms.type": "viceprez"
+      }
+    },
+    {
+      $project: {
+        fullName: { $concat: ["$name.first", " ", "$name.last"] },
+        yearsServed: {
+          $divide: [
+            { $subtract: [
+                { $toDate: "$terms.end" },
+                { $toDate: "$terms.start" }
+            ]},
+            1000 * 60 * 60 * 24 * 365
+          ]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: "$fullName",
+        totalYears: { $sum: "$yearsServed" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        fullName: "$_id",
+        totalYears: { $round: ["$totalYears", 2] }
+      }
+    },
+    { $sort: { totalYears: -1 } }
+  ])
+  
+
+
+Output: 
+[
+  {
+    "fullName": "George Bush",
+    "totalYears": 8.01
+  },
+  {
+    "fullName": "Albert Gore",
+    "totalYears": 8.01
+  },
+  {
+    "fullName": "Richard Cheney",
+    "totalYears": 8.01
+  },
+  {
+    "fullName": "Joseph Biden",
+    "totalYears": 8.01
+  },
+  {
+    "fullName": "Richard Nixon",
+    "totalYears": 8.01
+  },
+  {
+    "fullName": "Thomas Marshall",
+    "totalYears": 8.01
+  },
+  {
+    "fullName": "Daniel Tompkins",
+    "totalYears": 8.01
+  },
+  {
+    "fullName": "John Garner",
+    "totalYears": 7.89
+  },
+  {
+    "fullName": "John Adams",
+    "totalYears": 7.87
+  },
+  {
+    "fullName": "John Calhoun",
+    "totalYears": 7.82
+  },
+  {
+    "fullName": "George Clinton",
+    "totalYears": 7.13
+  },
+  {
+    "fullName": "Spiro Agnew",
+    "totalYears": 4.72
+  },
+  {
+    "fullName": "Adlai Stevenson",
+    "totalYears": 4
+  },
+  {
+    "fullName": "Walter Mondale",
+    "totalYears": 4
+  },
+  {
+    "fullName": "Levi Morton",
+    "totalYears": 4
+  },
+  {
+    "fullName": "Kamala Harris",
+    "totalYears": 4
+  },
+  {
+    "fullName": "Charles Curtis",
+    "totalYears": 4
+  },
+  {
+    "fullName": "Thomas Jefferson",
+    "totalYears": 4
+  },
+  {
+    "fullName": "Charles Dawes",
+    "totalYears": 4
+  },
+  {
+    "fullName": "Henry Wallace",
+    "totalYears": 4
+  }
+]
+
+
+
+
+2. List all parties that used to be represented by at least one legislator until 1988 but not anymore. 
+Query: 
+db.legislators.aggregate([
+    { $unwind: "$terms" },
+    {
+      $match: {
+        "terms.party": { $ne: null }
+      }
+    },
+    {
+      $project: {
+        party: "$terms.party",
+        year: { $year: { $toDate: "$terms.end" } }
+      }
+    },
+    {
+      $group: {
+        _id: "$party",
+        lastActiveYear: { $max: "$year" }
+      }
+    },
+    {
+      $match: {
+        lastActiveYear: { $lte: 1988 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        party: "$_id",
+        lastActiveYear: 1
+      }
+    },
+    { $sort: { lastActiveYear: -1 } }
+  ])
+
+
+
+Output: 
+[
+  {
+    "lastActiveYear": 1985,
+    "party": "New Progressive"
+  },
+  {
+    "lastActiveYear": 1977,
+    "party": "Conservative"
+  },
+  {
+    "lastActiveYear": 1975,
+    "party": "Ind. Democrat"
+  },
+  {
+    "lastActiveYear": 1951,
+    "party": "Liberal"
+  },
+  {
+    "lastActiveYear": 1951,
+    "party": "American Labor"
+  },
+  {
+    "lastActiveYear": 1947,
+    "party": "Progressive"
+  },
+  {
+    "lastActiveYear": 1945,
+    "party": "Coalitionist"
+  },
+  {
+    "lastActiveYear": 1945,
+    "party": "Farmer-Labor"
+  },
+  {
+    "lastActiveYear": 1933,
+    "party": "Unionist"
+  },
+  {
+    "lastActiveYear": 1933,
+    "party": "Nonpartisan"
+  },
+  {
+    "lastActiveYear": 1929,
+    "party": "Socialist"
+  },
+  {
+    "lastActiveYear": 1923,
+    "party": "Ind. Republican"
+  },
+  {
+    "lastActiveYear": 1921,
+    "party": "Union Labor"
+  },
+  {
+    "lastActiveYear": 1921,
+    "party": "Prohibitionist"
+  },
+  {
+    "lastActiveYear": 1913,
+    "party": "Progressive Republican"
+  },
+  {
+    "lastActiveYear": 1903,
+    "party": "Populist"
+  },
+  {
+    "lastActiveYear": 1903,
+    "party": "Silver Republican"
+  },
+  {
+    "lastActiveYear": 1899,
+    "party": "Silver"
+  },
+  {
+    "lastActiveYear": 1899,
+    "party": "Free Silver"
+  },
+  {
+    "lastActiveYear": 1889,
+    "party": "Union"
+  }
+]
+
+
+
+
+3. Count the total number of U.S. presidents of the “Democrat” and “Republican” party, respectively. For simplicity, just consider exact matches. For example, ignore “Democrat Liberal” or “Democratic-Republican”. For each party, list the names of the presidents of the party in alphabetic order of the last name. If multiple presidents of the same party have the same last name, further sort them based on their first names. 
+Query: 
+db.executives.aggregate([
+    { $unwind: "$terms" },
+    {
+      $match: {
+        "terms.type": "prez",
+        "terms.party": { $in: ["Democrat", "Republican"] }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          first: "$name.first",
+          last: "$name.last",
+          party: "$terms.party"
+        }
+      }
+    },
+    {
+      $group: {
+        _id: "$_id.party",
+        count: { $sum: 1 },
+        presidents: {
+          $push: {
+            first: "$_id.first",
+            last: "$_id.last"
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        party: "$_id",
+        count: 1,
+        presidents: {
+          $map: {
+            input: {
+              $sortArray: {
+                input: "$presidents",
+                sortBy: { last: 1, first: 1 }
+              }
+            },
+            as: "p",
+            in: { $concat: ["$$p.first", " ", "$$p.last"] }
+          }
+        }
+      }
+    }
+  ])
+  
+
+
+Output: 
+[
+  {
+    "count": 3,
+    "party": "Democrat",
+    "presidents": [
+      "Joseph Biden",
+      "William Clinton",
+      "Barack Obama"
+    ]
+  },
+  {
+    "count": 18,
+    "party": "Republican",
+    "presidents": [
+      "Chester Arthur",
+      "George Bush",
+      "Calvin Coolidge",
+      "Dwight Eisenhower",
+      "Gerald Ford",
+      "James Garfield",
+      "Ulysses Grant",
+      "Warren Harding",
+      "Benjamin Harrison",
+      "Rutherford Hayes",
+      "Herbert Hoover",
+      "Abraham Lincoln",
+      "William McKinley",
+      "Richard Nixon",
+      "Ronald Reagan",
+      "Theodore Roosevelt",
+      "William Taft",
+      "Donald Trump"
+    ]
+  }
+]
+
+
+4. Identify the longest serving/served Speaker(s) of the House. Display their names with the start and end dates. If a house speaker served multiple terms, only display the start date of the first term and end date of the last term. 
+Query: 
+use("project2");
+
+db.legislators.aggregate([
+  // 1. Filter documents that contain at least one Speaker role
+  {
+    $match: {
+      leadership_roles: {
+        $elemMatch: { title: "Speaker of the House" }
+      }
+    }
+  },
+  // 2. Extract speaker roles only
+  {
+    $project: {
+      fullName: {
+        $concat: [
+          "$name.first", " ",
+          { $cond: [{ $ifNull: ["$name.middle", false] }, { $concat: ["$name.middle", " "] }, "" ] },
+          "$name.last"
+        ]
+      },
+      speaker_terms: {
+        $filter: {
+          input: "$leadership_roles",
+          as: "role",
+          cond: { $eq: ["$$role.title", "Speaker of the House"] }
+        }
+      }
+    }
+  },
+  // 3. Flatten each speaker term to a row
+  { $unwind: "$speaker_terms" },
+  // 4. Compute duration per speaker term
+  {
+    $project: {
+      fullName: 1,
+      start: "$speaker_terms.start",
+      end: "$speaker_terms.end",
+      durationDays: {
+        $divide: [
+          { $subtract: [ { $toDate: "$speaker_terms.end" }, { $toDate: "$speaker_terms.start" } ] },
+          1000 * 60 * 60 * 24
+        ]
+      }
+    }
+  },
+   {
+    $group: {
+      _id: "$fullName",
+      totalDays: { $sum: "$durationDays" },
+      firstStart: { $min: "$start" },
+      lastEnd: { $max: "$end" }
+    }
+  },
+    { $sort: { totalDays: -1 } },
+  { $limit: 3 },
+  // 7. Format final output
+  {
+    $project: {
+      _id: 0,
+      name: "$_id",
+      start: "$firstStart",
+      end: "$lastEnd",
+      totalDays: { $round: ["$totalDays", 0] }
+    }
+  }
+]);
+
+Output: 
+[
+  {
+    "name": "John A. Boehner",
+    "start": "2011-01-05",
+    "end": "2015-10-28",
+    "totalDays": 1754
+  },
+  {
+    "name": "Paul D. Ryan",
+    "start": "2015-10-28",
+    "end": "2019-01-03",
+    "totalDays": 1163
+  },
+  {
+    "name": "Kevin McCarthy",
+    "start": "2023-01-07",
+    "end": "2023-10-03",
+    "totalDays": 269
+  }
+]
+
+5. List the names of all presidents who served as vice presidents for each party. 
+
+
+
+
+Query: 
+db.executives.aggregate([ 
+{ 
+$match: { 
+"terms.type": { $all: ["viceprez", "prez"] } 
+} 
+}, 
+{ 
+$project: { 
+fullName: { 
+$concat: [ 
+"$name.first", 
+" ", 
+{ $ifNull: ["$name.middle", ""] }, 
+{ $cond: [{ $gt: [{ $strLenCP: { $ifNull: ["$name.middle", ""] } }, 0] }, " ", ""] }, "$name.last" 
+] 
+}, 
+party: { 
+$first: { 
+$map: { 
+input: { 
+$filter: { 
+input: "$terms", 
+as: "t", 
+cond: { $eq: ["$$t.type", "viceprez"] } 
+} 
+}, 
+as: "vp", 
+in: "$$vp.party" 
+} 
+} 
+} 
+} 
+}, 
+{ 
+$group: { 
+_id: "$party", 
+presidents: { $addToSet: "$fullName" } 
+} 
+}, 
+{ 
+$project: { 
+_id: 0, 
+party: "$_id", 
+presidents: 1
+} 
+}, 
+{ $sort: { party: 1 } } 
+]) 
+
+
+
+
+Output:
+
+ 
+[ 
+{ 
+"presidents": [ 
+"Joseph Robinette Biden" 
+], 
+"party": "Democrat" 
+}, 
+{ 
+"presidents": [ 
+"Harry S. Truman", 
+"Lyndon Baines Johnson", 
+"Andrew Johnson", 
+"Martin Van Buren" 
+], 
+"party": "Democratic" 
+}, 
+{ 
+"presidents": [ 
+"Thomas Jefferson" 
+], 
+"party": "Democratic-Republican" }, 
+{ 
+"presidents": [ 
+"John Adams" 
+], 
+"party": "Federalist" 
+}, 
+{ 
+"presidents": [ 
+"Calvin Coolidge", 
+"Theodore Roosevelt", 
+"Chester Alan Arthur", 
+"Gerald Rudolph Ford", 
+"George Herbert Walker Bush", "Richard Milhous Nixon" 
+], 
+"party": "Republican" 
+}, 
+{ 
+"presidents": [
+"John Tyler", 
+"Millard Fillmore" ], 
+"party": "Whig" 
+} 
+]
+
+
+
+
+
+
+
+
+6. List the names of legislators who served in both the House and Senate. Query: 
+db.legislators.aggregate([ 
+{ 
+$project: { 
+name: { $concat: ["$name.first", " ", "$name.last"] }, 
+term_types: "$terms.type" 
+} 
+}, 
+{ 
+$match: { 
+term_types: { $all: ["rep", "sen"] } 
+} 
+}, 
+{ 
+$project: { 
+_id: 0, 
+name: 1 
+} 
+} 
+])
+
+ 
+Output: 
+[ 
+{ name: 'Roger Sherman' }, 
+{ name: 'Timothy Bloodworth' }, 
+{ name: 'John Vining' }, 
+{ name: 'Paine Wingate' }, 
+{ name: 'Jonathan Trumbull' }, 
+{ name: 'John Hunter' }, 
+{ name: 'Benjamin Goodhue' }, 
+{ name: 'John Laurance' }, 
+{ name: 'Henry Latimer' }, 
+{ name: 'John Brown' }, 
+{ name: 'Franklin Davenport' }, 
+{ name: 'Samuel Dexter' }, 
+{ name: 'Jonathan Dayton' }, 
+{ name: 'Theodore Sedgwick' }, 
+{ name: 'William Hindman' }, 
+{ name: 'Samuel Livermore' }, 
+{ name: 'Dwight Foster' }, 
+{ name: 'James Jackson' }, 
+{ name: 'John Muhlenberg' }, 
+{ name: 'James Sheafe' } 
+]
+
+
+
+
+7. List the names and states of all vice presidents who served in the Senate. Query: 
+db.executives.aggregate([ 
+{ 
+$match: { "terms.type": "viceprez" } 
+}, 
+{ 
+$lookup: { 
+from: "legislators", 
+localField: "id.bioguide", 
+foreignField: "id.bioguide", 
+as: "legislator_info" 
+} 
+}, 
+{ 
+$unwind: "$legislator_info" 
+}, 
+{ 
+$match: { "legislator_info.terms.type": "sen" } 
+}, 
+{ 
+$project: { 
+_id: 0, 
+name: { $concat: ["$name.first", " ", "$name.last"] }, 
+states: { 
+$setUnion: [ 
+{ 
+$map: { 
+input: "$legislator_info.terms", 
+as: "term", 
+in: "$$term.state" 
+} 
+}, 
+[] 
+] 
+} 
+} 
+} 
+]) 
+
+
+
+Output: 
+
+[ 
+{ 
+"name": "Richard Johnson", 
+"states": [ 
+"KY" 
+] 
+},
+{ 
+"name": "Martin Van Buren", "states": [ 
+"NY" 
+] 
+}, 
+{ 
+"name": "George Dallas", "states": [ 
+"PA" 
+] 
+}, 
+{ 
+"name": "John Tyler", 
+"states": [ 
+"VA" 
+] 
+}, 
+{ 
+"name": "William King", "states": [ 
+"AL", 
+"NC" 
+] 
+}, 
+{ 
+"name": "Hannibal Hamlin", "states": [ 
+"ME" 
+] 
+}, 
+{ 
+"name": "John Breckinridge", "states": [ 
+"KY" 
+] 
+}, 
+{ 
+"name": "Aaron Burr", 
+"states": [ 
+"NY" 
+] 
+}, 
+{ 
+"name": "Andrew Johnson", "states": [ 
+"TN"
+] 
+}, 
+{ 
+"name": "Henry Wilson", "states": [ 
+"MA" 
+] 
+}, 
+{ 
+"name": "John Calhoun", "states": [ 
+"SC" 
+] 
+}, 
+{ 
+"name": "Thomas Hendricks", "states": [ 
+"IN" 
+] 
+}, 
+{ 
+"name": "Charles Fairbanks", "states": [ 
+"IN" 
+] 
+}, 
+{ 
+"name": "Charles Curtis", "states": [ 
+"KS" 
+] 
+}, 
+{ 
+"name": "Alben Barkley", "states": [ 
+"KY" 
+] 
+}, 
+{ 
+"name": "Harry Truman", "states": [ 
+"MO" 
+] 
+}, 
+{ 
+"name": "Hubert Humphrey", "states": [
+"MN" 
+] 
+}, 
+{ 
+"name": "Richard Nixon", "states": [ 
+"CA" 
+] 
+}, 
+{ 
+"name": "Lyndon Johnson", "states": [ 
+"TX" 
+] 
+}, 
+{ 
+"name": "Joseph Biden", "states": [ 
+"DE" 
+] 
+} 
+]
+
+
+
+
+
+
+8. Count the number of terms and years served by each party across all presidents. Query: 
+db.executives.aggregate([ 
+{ $unwind: "$terms" }, 
+{ 
+$match: { 
+"terms.type": "prez", 
+"terms.party": { $ne: "no party" } 
+} 
+}, 
+{ 
+$project: { 
+party: "$terms.party", 
+durationYears: { 
+$divide: [ 
+{ $subtract: [ 
+{ $toDate: "$terms.end" }, 
+{ $toDate: "$terms.start" } 
+]}, 
+1000 * 60 * 60 * 24 * 365 
+] 
+} 
+} 
+}, 
+{ 
+$group: { 
+_id: "$party", 
+totalTerms: { $sum: 1 }, 
+totalYears: { $sum: "$durationYears" } 
+} 
+}, 
+{ 
+$project: { 
+_id: 0, 
+party: "$_id", 
+totalTerms: 1, 
+totalYears: { $round: ["$totalYears", 2] } 
+} 
+}, 
+{ $sort: { totalYears: -1 } } 
+]) 
+
+
+Output: 
+
+[ 
+{ 
+"totalTerms": 28, 
+"party": "Republican",
+"totalYears": 92.18 
+}, 
+{ 
+"totalTerms": 21, 
+"party": "Democratic", 
+"totalYears": 75.82 
+}, 
+{ 
+"totalTerms": 7, 
+"party": "Democratic-Republican", "totalYears": 28.02 
+}, 
+{ 
+"totalTerms": 5, 
+"party": "Democrat", 
+"totalYears": 20.01 
+}, 
+{ 
+"totalTerms": 4, 
+"party": "Whig", 
+"totalYears": 8.01 
+}, 
+{ 
+"totalTerms": 1, 
+"party": "Federalist", 
+"totalYears": 4 
+} 
+]
+
+
+
+
+
+
+9. List the names of presidents of the Republication party who became president through succession. 
+Query: 
+db.executives.aggregate([ 
+{ $unwind: "$terms" }, 
+{ 
+$match: { 
+"terms.type": "prez", 
+"terms.party": "Republican", 
+"terms.how": "succession" 
+} 
+}, 
+{ 
+$project: { 
+_id: 0, 
+name: { $concat: ["$name.first", " ", "$name.last"] } 
+} 
+} 
+])
+
+ 
+Output:
+ 
+[ 
+{ name: 'Chester Arthur' }, 
+{ name: 'Calvin Coolidge' }, 
+{ name: 'Theodore Roosevelt' }, 
+{ name: 'Gerald Ford' } 
+]
+
+
+
+
+
+
+
+
+10. Identify U.S. presidents who did not serve in Congress. Display their names and beginning and end date of their terms. 
+Query: 
+db.executives.aggregate([ 
+{ 
+$unwind: "$terms" 
+}, 
+{ 
+$match: { "terms.type": "prez" } 
+}, 
+{ 
+$lookup: { 
+from: "legislators", 
+localField: "id.bioguide", 
+foreignField: "id.bioguide", 
+as: "legislator_info" 
+} 
+}, 
+{ 
+$match: { legislator_info: { $eq: [] } } 
+}, 
+{ 
+$group: { 
+_id: { $concat: ["$name.first", " ", "$name.last"] }, 
+terms: { 
+$push: { 
+start: "$terms.start", 
+end: "$terms.end" 
+} 
+} 
+} 
+}, 
+{ 
+$project: { 
+_id: 0, 
+name: "$_id", 
+terms: 1 
+} 
+}, 
+{ 
+$sort: { name: 1 } 
+} 
+]) 
+
+
+Output: 
+
+[ 
+{
+terms: [ 
+{ start: '1923-08-02', end: '1925-03-04' }, { start: '1925-03-04', end: '1929-03-04' } ], 
+name: 'Calvin Coolidge' 
+}, 
+{ 
+terms: [ { start: '1881-09-19', end: '1885-03-04' } ], name: 'Chester Arthur' 
+}, 
+{ 
+terms: [ { start: '2017-01-20', end: '2021-01-20' } ], name: 'Donald Trump' 
+}, 
+{ 
+terms: [ 
+{ start: '1953-01-20', end: '1957-01-20' }, { start: '1957-01-20', end: '1961-01-20' } ], 
+name: 'Dwight Eisenhower' 
+}, 
+{ 
+terms: [ 
+{ start: '1933-03-04', end: '1937-01-20' }, { start: '1937-01-20', end: '1941-01-20' }, { start: '1941-01-20', end: '1945-01-20' }, { start: '1945-01-20', end: '1945-04-12' } ], 
+name: 'Franklin Roosevelt' 
+}, 
+{ 
+terms: [ 
+{ start: '2001-01-20', end: '2005-01-20' }, { start: '2005-01-20', end: '2009-01-20' } ], 
+name: 'George Bush' 
+}, 
+{ 
+terms: [ 
+{ start: '1789-04-30', end: '1793-03-04' }, { start: '1793-03-04', end: '1797-03-04' } ], 
+name: 'George Washington' 
+}, 
+{ 
+terms: [ 
+{ start: '1885-03-04', end: '1889-03-04' },
+{ start: '1893-03-04', end: '1897-03-04' } ], 
+name: 'Grover Cleveland' 
+}, 
+{ 
+terms: [ { start: '1929-03-04', end: '1933-03-04' } ], name: 'Herbert Hoover' 
+}, 
+{ 
+terms: [ { start: '1977-01-20', end: '1981-01-20' } ], name: 'James Carter' 
+}, 
+{ 
+terms: [ { start: '1797-03-04', end: '1801-03-04' } ], name: 'John Adams' 
+}, 
+{ 
+terms: [ 
+{ start: '1981-01-20', end: '1985-01-20' }, { start: '1985-01-20', end: '1989-01-20' } ], 
+name: 'Ronald Reagan' 
+}, 
+{ 
+terms: [ 
+{ start: '1901-09-14', end: '1905-03-04' }, { start: '1905-03-04', end: '1909-03-04' } ], 
+name: 'Theodore Roosevelt' 
+}, 
+{ 
+terms: [ 
+{ start: '1801-03-04', end: '1805-03-04' }, { start: '1805-03-04', end: '1809-03-04' } ], 
+name: 'Thomas Jefferson' 
+}, 
+{ 
+terms: [ 
+{ start: '1869-03-04', end: '1873-03-04' }, { start: '1873-03-04', end: '1877-03-04' } ], 
+name: 'Ulysses Grant' 
+}, 
+{ 
+terms: [ 
+{ start: '1993-01-20', end: '1997-01-20' },
+{ start: '1997-01-20', end: '2001-01-20' } ], 
+name: 'William Clinton' 
+}, 
+{ 
+terms: [ { start: '1909-03-04', end: '1913-03-04' } ], name: 'William Taft' 
+}, 
+{ 
+terms: [ 
+{ start: '1913-03-04', end: '1917-03-04' }, { start: '1917-03-04', end: '1921-03-04' } ], 
+name: 'Woodrow Wilson' 
+}, 
+{ 
+terms: [ { start: '1849-03-04', end: '1850-07-09' } ], name: 'Zachary Taylor' 
+} 
+]
+
+
+
+
+11. Calculate and display the average duration of vice-presidential terms by party. Find the party that has the longest average duration of vice-presidential terms.
+
+
+Answer: 
+
+
+const db = db.getSiblingDB('project2'); //Switch to the database(proj2)  
+db.executives.aggregate([
+    { $unwind: "$terms" }, //create one docs per term so each term can proceed 
+    { $match: { "terms.type": "viceprez" } },
+    { 
+      $group: {
+        _id: "$terms.party",
+        avgDurationYears: { 
+          $avg: {
+            $divide: [
+              { $subtract: [ { $toDate: "$terms.end" }, { $toDate: "$terms.start" } ] },
+              1000 * 60 * 60 * 24 * 365
+            ]
+          }
+        }
+      }
+    },
+    { $sort: { avgDurationYears: -1 } }
+  ]);
+
+
+
+Output: 
+[
+  {
+    "_id": "Democrat",
+    "avgDurationYears": 4.002739726027397
+  },
+  {
+    "_id": "Federalist",
+    "avgDurationYears": 3.9369863013698634
+  },
+  {
+    "_id": "Democratic-Republican",
+    "avgDurationYears": 3.6085616438356163
+  },
+  {
+    "_id": "Republican",
+    "avgDurationYears": 3.2047123287671235
+  },
+  {
+    "_id": "Democratic",
+    "avgDurationYears": 3.1457822638788757
+  },
+  {
+    "_id": "Whig",
+    "avgDurationYears": 0.7164383561643836
+  }
+]
+
+
+
+
+
+12.  Calculate the total number of years served by each president in office.
+
+
+Answer : 
+
+
+use("project2");
+db.executives.aggregate([
+    { $unwind: "$terms" },
+    {
+      $match: {
+        "terms.type": "prez"
+      }
+    },
+    {
+      $project: {
+        name: { $concat: ["$name.first", " ", "$name.last"] },
+        yearsServed: {
+          $divide: [
+            { $subtract: [
+                { $toDate: "$terms.end" },
+                { $toDate: "$terms.start" }
+            ]},
+            1000 * 60 * 60 * 24 * 365  // milliseconds to years
+          ]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: "$name",
+        totalYears: { $sum: "$yearsServed" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        name: "$_id",
+        totalYears: { $round: ["$totalYears", 2] }
+      }
+    },
+    { $sort: { totalYears: } }
+  ])
+
+
+
+
+output : 
+
+
+[
+  {
+    "name": "Franklin Roosevelt",
+    "totalYears": 12.12
+  },
+  {
+    "name": "George Bush",
+    "totalYears": 12.01
+  },
+  {
+    "name": "Dwight Eisenhower",
+    "totalYears": 8.01
+  },
+  {
+    "name": "William Clinton",
+    "totalYears": 8.01
+  },
+  {
+    "name": "James Madison",
+    "totalYears": 8.01
+  },
+  {
+    "name": "Ulysses Grant",
+    "totalYears": 8.01
+  },
+  {
+    "name": "Barack Obama",
+    "totalYears": 8.01
+  },
+  {
+    "name": "Ronald Reagan",
+    "totalYears": 8.01
+  },
+  {
+    "name": "Andrew Jackson",
+    "totalYears": 8.01
+  },
+  {
+    "name": "Woodrow Wilson",
+    "totalYears": 8.01
+  },
+  {
+    "name": "Thomas Jefferson",
+    "totalYears": 8.01
+  },
+  {
+    "name": "Grover Cleveland",
+    "totalYears": 8.01
+  },
+  {
+    "name": "James Monroe",
+    "totalYears": 8.01
+  },
+  {
+    "name": "John Adams",
+    "totalYears": 8
+  },
+  {
+    "name": "George Washington",
+    "totalYears": 7.85
+  },
+  {
+    "name": "Harry Truman",
+    "totalYears": 7.78
+  },
+  {
+    "name": "Theodore Roosevelt",
+    "totalYears": 7.47
+  },
+  {
+    "name": "Calvin Coolidge",
+    "totalYears": 5.59
+  },
+  {
+    "name": "Richard Nixon",
+    "totalYears": 5.55
+  },
+  {
+    "name": "Lyndon Johnson",
+    "totalYears": 5.17
+  }
+]
+
+
+
+
+13. When a user provides any president’s name, list the names of legislators who served in
+Congress during the president’s term and shared the same party affiliation. 
+
+
+answer:
+
+
+use("project2");
+  function findLegislatorsByPresident(firstName, lastName) {
+    return db.executives.aggregate([
+      {
+        $match: {
+          "name.first": firstName,
+          "name.last": lastName
+        }
+      },
+      { $unwind: "$terms" },
+      {
+        $match: { "terms.type": "prez" }
+      },
+      {
+        $lookup: {
+          from: "legislators",
+          let: {
+            prezStart: "$terms.start",
+            prezEnd: "$terms.end",
+            prezParty: "$terms.party"
+          },
+          pipeline: [
+            { $unwind: "$terms" },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $lte: ["$terms.start", "$$prezEnd"] },
+                    { $gte: ["$terms.end", "$$prezStart"] },
+                    { $eq: ["$terms.party", "$$prezParty"] }
+                  ]
+                }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                fullName: {
+                  $concat: ["$name.first", " ", "$name.last"]
+                }
+              }
+            }
+          ],
+          as: "matching_legislators"
+        }
+      },
+      { $unwind: "$matching_legislators" },
+      {
+        $group: {
+          _id: "$matching_legislators.fullName"
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          legislator: "$_id"
+        }
+      },
+      { $sort: { legislator: 1 } }
+    ]);
+  }
+
+ findLegislatorsByPresident("Barack", "Obama");
+
+output : 
+
+
+
+
+[
+  {
+    "legislator": "A. McEachin"
+  },
+  {
+    "legislator": "Al Lawson"
+  },
+  {
+    "legislator": "Alan Franken"
+  },
+  {
+    "legislator": "Alan Grayson"
+  },
+  {
+    "legislator": "Alan Lowenthal"
+  },
+  {
+    "legislator": "Alan Mollohan"
+  },
+  {
+    "legislator": "Albio Sires"
+  },
+  {
+    "legislator": "Alcee Hastings"
+  },
+  {
+    "legislator": "Allen Boyd"
+  },
+  {
+    "legislator": "Allyson Schwartz"
+  },
+  {
+    "legislator": "Ann Kirkpatrick"
+  },
+  {
+    "legislator": "Anthony Brown"
+  },
+  {
+    "legislator": "Anthony Weiner"
+  },
+  {
+    "legislator": "Arlen Specter"
+  },
+  {
+    "legislator": "Artur Davis"
+  },
+  {
+    "legislator": "Barbara Boxer"
+  },
+  {
+    "legislator": "Barbara Mikulski"
+  },
+  {
+    "legislator": "Barney Frank"
+  },
+  {
+    "legislator": "Baron Hill"
+  },
+  {
+    "legislator": "Bart Stupak"
+  }
+]
+
+14. List the name and the states of every legislator who was elected in more than one states.
+
+
+Answer:
+
+
+const db = db.getSiblingDB('project2');
+db.legislators.aggregate([
+    { $unwind: "$terms" },
+    { 
+      $group: {
+        _id: { first: "$name.first", last: "$name.last" },
+        states: { $addToSet: "$terms.state" }
+      }
+    },
+    { $match: { "states.1": { $exists: true } } }, 
+    { 
+      $project: {
+        fullName: { $concat: ["$_id.first", " ", "$_id.last"] },
+        states: 1
+      }
+    }
+  ]);
+
+
+
+
+output : 
+
+
+
+[
+  {
+    "_id": {
+      "first": "William",
+      "last": "Montgomery"
+    },
+    "states": [
+      "PA",
+      "NC"
+    ],
+    "fullName": "William Montgomery"
+  },
+  {
+    "_id": {
+      "first": "William",
+      "last": "Maclay"
+    },
+    "states": [
+      "NY",
+      "PA"
+    ],
+    "fullName": "William Maclay"
+  },
+  {
+    "_id": {
+      "first": "William",
+      "last": "Mason"
+    },
+    "states": [
+      "NY",
+      "IL"
+    ],
+    "fullName": "William Mason"
+  },
+  {
+    "_id": {
+      "first": "Robert",
+      "last": "Everett"
+    },
+    "states": [
+      "GA",
+      "TN"
+    ],
+    "fullName": "Robert Everett"
+  },
+  {
+    "_id": {
+      "first": "William",
+      "last": "Jones"
+    },
+    "states": [
+      "WA",
+      "WY",
+      "VA",
+      "PA"
+    ],
+    "fullName": "William Jones"
+  },
+  {
+    "_id": {
+      "first": "Thomas",
+      "last": "Chandler"
+    },
+    "states": [
+      "OK",
+      "NH"
+    ],
+    "fullName": "Thomas Chandler"
+  },
+  {
+    "_id": {
+      "first": "Richard",
+      "last": "Russell"
+    },
+    "states": [
+      "MA",
+      "GA"
+    ],
+    "fullName": "Richard Russell"
+  },
+  {
+    "_id": {
+      "first": "John",
+      "last": "Hill"
+    },
+    "states": [
+      "NJ",
+      "VA",
+      "MD",
+      "NC"
+    ],
+    "fullName": "John Hill"
+  },
+  {
+    "_id": {
+      "first": "John",
+      "last": "Hunter"
+    },
+    "states": [
+      "NY",
+      "OH",
+      "SC"
+    ],
+    "fullName": "John Hunter"
+  },
+  {
+    "_id": {
+      "first": "Thomas",
+      "last": "Cobb"
+    },
+    "states": [
+      "IN",
+      "GA"
+    ],
+    "fullName": "Thomas Cobb"
+  },
+  {
+    "_id": {
+      "first": "James",
+      "last": "Roosevelt"
+    },
+    "states": [
+      "NY",
+      "CA"
+    ],
+    "fullName": "James Roosevelt"
+  },
+  {
+    "_id": {
+      "first": "Samuel",
+      "last": "Houston"
+    },
+    "states": [
+      "TN",
+      "TX"
+    ],
+    "fullName": "Samuel Houston"
+  },
+  {
+    "_id": {
+      "first": "George",
+      "last": "Wilson"
+    },
+    "states": [
+      "OH",
+      "IA",
+      "OK"
+    ],
+    "fullName": "George Wilson"
+  },
+  {
+    "_id": {
+      "first": "George",
+      "last": "Briggs"
+    },
+    "states": [
+      "MA",
+      "NY"
+    ],
+    "fullName": "George Briggs"
+  },
+  {
+    "_id": {
+      "first": "David",
+      "last": "Stewart"
+    },
+    "states": [
+      "MD",
+      "IA"
+    ],
+    "fullName": "David Stewart"
+  },
+  {
+    "_id": {
+      "first": "William",
+      "last": "Gordon"
+    },
+    "states": [
+      "VA",
+      "OH",
+      "NH"
+    ],
+    "fullName": "William Gordon"
+  },
+  {
+    "_id": {
+      "first": "William",
+      "last": "Draper"
+    },
+    "states": [
+      "MA",
+      "NY"
+    ],
+    "fullName": "William Draper"
+  },
+  {
+    "_id": {
+      "first": "John",
+      "last": "Crowell"
+    },
+    "states": [
+      "AL",
+      "OH"
+    ],
+    "fullName": "John Crowell"
+  },
+  {
+    "_id": {
+      "first": "John",
+      "last": "Williams"
+    },
+    "states": [
+      "TN",
+      "DE",
+      "NY",
+      "KY",
+      "MT",
+      "MA",
+      "MS"
+    ],
+    "fullName": "John Williams"
+  },
+  {
+    "_id": {
+      "first": "George",
+      "last": "Perkins"
+    },
+    "states": [
+      "IA",
+      "CA"
+    ],
+    "fullName": "George Perkins"
+  }
+]
+
+
+
+
+15. List the name of every president who had dicerent party aciliation from his immediate
+predecessor. Exclude the first US president.
+
+
+
+
+Answer:
+
+
+const db = db.getSiblingDB('project2');
+db.executives.aggregate([
+    { $unwind: "$terms" },
+    { $match: { "terms.type": "prez" } },
+    { $sort: { "terms.start": 1 } },
+    { 
+      $group: {
+        _id: null,
+        presidents: { 
+          $push: {
+            fullName: { $concat: ["$name.first", " ", "$name.last"] },
+            party: "$terms.party"
+          }
+        }
+      }
+    },
+    { 
+      $project: {
+        diffs: {
+          $filter: {
+            input: { 
+              $map: {
+                input: { $range: [1, { $size: "$presidents" }] },
+                as: "idx",
+                in: {
+                  current: { $arrayElemAt: ["$presidents", "$$idx"] },
+                  previous: { $arrayElemAt: ["$presidents", { $subtract: ["$$idx", 1] }] }
+                }
+              }
+            },
+            as: "pair",
+            cond: { $ne: ["$$pair.current.party", "$$pair.previous.party"] }
+          }
+        }
+      }
+    },
+    { $unwind: "$diffs" },
+    { $replaceRoot: { newRoot: "$diffs.current" } }
+  ]);
+
+output : 
+
+
+[
+  {
+    "fullName": "John Adams",
+    "party": "Federalist"
+  },
+  {
+    "fullName": "Thomas Jefferson",
+    "party": "Democratic-Republican"
+  },
+  {
+    "fullName": "Andrew Jackson",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "William Harrison",
+    "party": "Whig"
+  },
+  {
+    "fullName": "James Polk",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "Zachary Taylor",
+    "party": "Whig"
+  },
+  {
+    "fullName": "Franklin Pierce",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "Abraham Lincoln",
+    "party": "Republican"
+  },
+  {
+    "fullName": "Andrew Johnson",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "Ulysses Grant",
+    "party": "Republican"
+  },
+  {
+    "fullName": "Grover Cleveland",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "Benjamin Harrison",
+    "party": "Republican"
+  },
+  {
+    "fullName": "Grover Cleveland",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "William McKinley",
+    "party": "Republican"
+  },
+  {
+    "fullName": "Woodrow Wilson",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "Warren Harding",
+    "party": "Republican"
+  },
+  {
+    "fullName": "Franklin Roosevelt",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "Dwight Eisenhower",
+    "party": "Republican"
+  },
+  {
+    "fullName": "John Kennedy",
+    "party": "Democratic"
+  },
+  {
+    "fullName": "Richard Nixon",
+    "party": "Republican"
+  }
+]

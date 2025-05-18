@@ -1,0 +1,398 @@
+												
+
+
+												Database Systems
+											Project 1: Writing SQL Queries in Oracle
+												Group number : 25 
+		     								 Name :Ankita Patra , B01101280 ,apatra@binghamton.edu
+										Name : Shruti Nehe , B01092927 , snehe@binghamton.edu
+
+
+“We have done this project entirely on our own. We have neither copied the work of others nor shared our solution with anyone else. We understand that if we are involved in plagiarism or cheating, we will be required to sign an official form admitting to the violation, which will be added to our official university records. We also understand that we will receive a grade of 0, our letter grades will be reduced by one level for our first offense, and any additional offense of any kind will result in a grade of ‘F’.”
+
+
+SQL> set echo on
+SQL> spool project1.txt
+SQL> start 1
+
+SQL> select s.lastname
+  2  from Students s
+  3  where s.sid in (
+  4        select e.sid
+  5        from Enrollments e, Classes c, Courses co
+  6        where e.classid = c.classid
+  7          and c.dept_code = co.dept_code
+  8          and c.course# = co.course#
+  9          and UPPER(co.dept_code) = 'CS'
+ 10  )
+ 11  and s.sid in (
+ 12        select e.sid
+ 13        from Enrollments e, Classes c, Courses co
+ 14        where e.classid = c.classid
+ 15          and c.dept_code = co.dept_code
+ 16          and c.course# = co.course#
+ 17          and UPPER(co.dept_code) = 'MATH'
+ 18  );
+
+LASTNAME
+---------------
+Broker
+Buttler
+Lee
+
+
+
+SQL> start 2
+SQL> SELECT classid, dept_code, course#
+  2  FROM classes
+  3  WHERE (dept_code, course#, classid) NOT IN (
+  4      SELECT dept_code, course#, classid
+  5      FROM classes
+  6      WHERE year = 2024 AND semester = 'Spring'
+  7  );
+
+CLASS DEPT    COURSE#
+----- ---- ----------
+c0007 Math        221
+c0011 CS          535
+c0003 Math        314
+c0005 CS          240
+c0006 CS          532
+c0001 CS          432
+c0008 CS          557
+c0010 CS          524
+c0004 CS          432
+c0009 CS          547
+c0012 Math        221
+
+CLASS DEPT    COURSE#
+----- ---- ----------
+c0002 Math        314
+c0013 CS          532
+
+13 rows selected.
+
+
+
+SQL> start 3
+SQL> SELECT firstname, lastname
+  2  FROM students
+  3  WHERE sid NOT IN (
+  4      SELECT DISTINCT sid FROM enrollments WHERE lgrade = 'C'
+  5  )
+  6  AND sid IN (
+  7      SELECT DISTINCT sid FROM enrollments
+  8  );
+
+FIRSTNAME       LASTNAME
+--------------- ---------------
+Jack            Smith
+Terry           Zillman
+Raju            Uppalapati
+Terry           Buttler
+Anne            Wang
+Becky           Lee
+Anne            Broker
+
+7 rows selected.
+
+
+
+SQL> start 4
+SQL> SELECT firstname
+  2  FROM students s
+  3  WHERE NOT EXISTS (
+  4      -- Find any class where the student received a grade other than 'B'
+  5      SELECT 1 FROM enrollments e
+  6      WHERE e.sid = s.sid
+  7      AND e.lgrade IS NOT NULL
+  8      AND e.lgrade <> 'B'
+  9  )
+ 10  AND EXISTS (
+ 11      -- Ensure the student has at least one graded course
+ 12      SELECT 1 FROM enrollments e
+ 13      WHERE e.sid = s.sid
+ 14      AND e.lgrade IS NOT NULL
+ 15  )
+ 16  AND firstname = (
+ 17      -- Select the lexicographically first occurrence of the firstname
+ 18      SELECT MIN(firstname) FROM students WHERE firstname = s.firstname
+ 19  )
+ 20  ORDER BY firstname;
+
+FIRSTNAME
+---------------
+Anne
+Jack
+
+
+
+SQL> start 5
+SQL> WITH CourseCounts AS (
+  2    SELECT c.dept_code,
+  3           c.course#,
+  4           COUNT(*) AS times_offered,
+  5           MIN(c.classid) AS cid
+  6    FROM Classes c
+  7    GROUP BY c.dept_code, c.course#
+  8    HAVING COUNT(*) >= 1
+  9  )
+ 10  SELECT cid, dept_code, course#
+ 11  FROM CourseCounts
+ 12  WHERE times_offered = (
+ 13    SELECT MIN(times_offered)
+ 14    FROM CourseCounts
+ 15  );
+
+CID   DEPT    COURSE#
+----- ---- ----------
+c0011 CS          535
+c0009 CS          547
+c0008 CS          557
+c0005 CS          240
+c0010 CS          524
+
+
+
+
+SQL> start 6
+SQL> SELECT s.sid, s.firstname
+  2  FROM students s
+  3  JOIN enrollments e ON s.sid = e.sid
+  4  GROUP BY s.sid, s.firstname
+  5  HAVING COUNT(e.classid) > 2;
+
+SID  FIRSTNAME
+---- ---------------
+B006 Terry
+B002 Terry
+B005 Jack
+B007 Becky
+B003 Anne
+B001 Anne
+
+6 rows selected.
+
+
+
+SQL> start 7
+SQL> SELECT c.*
+  2  FROM Classes c
+  3  WHERE c.year = 2025
+  4    AND c.semester = 'Spring'
+  5    AND (SELECT COUNT(*)
+  6         FROM Enrollments e
+  7         WHERE e.classid = c.classid) < 2;
+
+CLASS DEPT    COURSE#      SECT#       YEAR SEMEST      LIMIT CLASS_SIZE
+----- ---- ---------- ---------- ---------- ------ ---------- ----------
+c0012 Math        221          1       2025 Spring         30         30
+c0013 CS          532          1       2025 Spring         29         28
+
+
+
+
+SQL> start 8
+SQL> SELECT s.sid, s.lastname
+  2  FROM students s
+  3  JOIN enrollments e ON s.sid = e.sid
+  4  JOIN classes c ON e.classid = c.classid
+  5  JOIN courses cr ON c.dept_code = cr.dept_code AND c.course# = cr.course#
+  6  WHERE cr.dept_code = 'Math' AND cr.course# BETWEEN 200 AND 299
+  7  GROUP BY s.sid, s.lastname
+  8  HAVING COUNT(DISTINCT cr.course#) = (
+  9      -- Count the total number of distinct 200-level Math courses
+ 10      SELECT COUNT(DISTINCT course#)
+ 11      FROM courses
+ 12      WHERE dept_code = 'Math' AND course# BETWEEN 200 AND 299
+ 13  );
+
+SID  LASTNAME
+---- ---------------
+B007 Lee
+
+
+
+
+SQL> start 9
+SQL> SELECT DISTINCT co.title
+  2  FROM Courses co
+  3  JOIN Classes c ON co.dept_code = c.dept_code AND co.course# = c.course#
+  4  JOIN Enrollments e ON c.classid = e.classid
+  5  WHERE e.sid = 'B005'
+  6    AND NOT EXISTS (
+  7        SELECT 1
+  8        FROM Enrollments e2
+  9        JOIN Classes c2 ON e2.classid = c2.classid
+ 10        WHERE e2.sid = 'B003'
+ 11          AND c2.dept_code = co.dept_code
+ 12          AND c2.course# = co.course#
+ 13    );
+
+TITLE
+--------------------
+data mining
+
+
+
+SQL> start 10
+SQL> SELECT DISTINCT s.lastname
+  2  FROM students s
+  3  JOIN enrollments e ON s.sid = e.sid
+  4  JOIN classes c ON e.classid = c.classid
+  5  JOIN courses cr ON c.dept_code = cr.dept_code AND c.course# = cr.course#
+  6  WHERE (cr.dept_code, cr.course#) IN (
+  7      SELECT c.dept_code, c.course#
+  8      FROM enrollments e
+  9      JOIN classes c ON e.classid = c.classid
+ 10      JOIN courses cr ON c.dept_code = cr.dept_code AND c.course# = cr.course#
+ 11      WHERE e.sid = 'B002'
+ 12  )
+ 13  AND s.sid <> 'B002';
+
+LASTNAME
+---------------
+Broker
+Lee
+Zillman
+Callan
+Uppalapati
+Wang
+Smith
+
+7 rows selected.
+
+
+
+SQL> start 11
+SQL> SELECT dept_code, course#, semester, year
+  2  FROM Classes
+  3  GROUP BY dept_code, course#, semester, year
+  4  HAVING COUNT(*) >= 2;
+
+DEPT    COURSE# SEMEST       YEAR
+---- ---------- ------ ----------
+CS          432 Spring       2023
+Math        314 Spring       2023
+
+
+
+SQL> start 12
+SQL> WITH GradeMapping AS (
+  2      SELECT e.classid, e.sid, s.firstname,
+  3             CASE e.lgrade
+  4                 WHEN 'A' THEN 4
+  5                 WHEN 'B' THEN 3
+  6                 WHEN 'C' THEN 2
+  7                 WHEN 'D' THEN 1
+  8                 WHEN 'F' THEN 0
+  9                 ELSE NULL
+ 10             END AS numeric_grade
+ 11      FROM enrollments e
+ 12      JOIN students s ON e.sid = s.sid
+ 13      WHERE e.lgrade IS NOT NULL
+ 14  ),
+ 15  MaxGrades AS (
+ 16      SELECT classid, MAX(numeric_grade) AS highest_numeric_grade
+ 17      FROM GradeMapping
+ 18      GROUP BY classid
+ 19  )
+ 20  SELECT DISTINCT gm.sid, gm.firstname
+ 21  FROM GradeMapping gm
+ 22  JOIN MaxGrades mg
+ 23  ON gm.classid = mg.classid AND gm.numeric_grade = mg.highest_numeric_grade;
+
+SID  FIRSTNAME
+---- ---------------
+B006 Terry
+B002 Terry
+B004 Barbara
+B007 Becky
+B009 Raju
+B003 Anne
+B001 Anne
+
+7 rows selected.
+
+
+
+SQL> start 13
+SQL> SELECT co.dept_code, co.course#, co.title,
+  2         NVL(e.lgrade, 'TBA') AS grade
+  3  FROM Courses co
+  4  JOIN Classes c ON co.dept_code = c.dept_code AND co.course# = c.course#
+  5  JOIN Enrollments e ON c.classid = e.classid
+  6  WHERE e.sid = 'B005';
+
+DEPT    COURSE# TITLE                GRA
+---- ---------- -------------------- ---
+CS          432 database systems     B
+CS          240 data structure       TBA
+CS          532 database systems     B
+CS          535 data mining          B
+
+
+
+SQL> start 14
+SQL> WITH HighGPAStudents AS (
+  2      -- Get students with GPA >= 3.0
+  3      SELECT sid FROM students WHERE gpa >= 3.0
+  4  ),
+  5  QualifiedCourses AS (
+  6      -- Find courses whose title contains "data"
+  7      SELECT dept_code, course#, title
+  8      FROM courses
+  9      WHERE LOWER(title) LIKE '%data%'
+ 10  ),
+ 11  CourseEnrollment AS (
+ 12      -- Find enrollments of students with GPA >= 3.0 in courses with "data"
+ 13      SELECT e.sid, c.dept_code, c.course#
+ 14      FROM enrollments e
+ 15      JOIN classes cl ON e.classid = cl.classid
+ 16      JOIN QualifiedCourses c ON cl.dept_code = c.dept_code AND cl.course# = c.course#
+ 17  )
+ 18  SELECT qc.dept_code, qc.course#, qc.title
+ 19  FROM QualifiedCourses qc
+ 20  WHERE NOT EXISTS (
+ 21      -- Find students with GPA >= 3.0 who have NOT taken the course
+ 22      SELECT 1 FROM HighGPAStudents hgs
+ 23      WHERE NOT EXISTS (
+ 24          SELECT 1 FROM CourseEnrollment ce
+ 25          WHERE ce.sid = hgs.sid
+ 26          AND ce.dept_code = qc.dept_code
+ 27          AND ce.course# = qc.course#
+ 28      )
+ 29  );
+
+DEPT    COURSE# TITLE
+---- ---------- --------------------
+CS          532 database systems
+
+
+
+
+SQL> start 15
+SQL> SELECT s.sid,
+  2         s.lastname,
+  3         (SUM(g.ngrade) / COUNT(*)) AS cgpa
+  4  FROM Students s
+  5  JOIN Enrollments e ON s.sid = e.sid
+  6  JOIN Grades g ON e.lgrade = g.lgrade
+  7  GROUP BY s.sid, s.lastname
+  8  ORDER BY cgpa ASC;
+
+SID  LASTNAME              CGPA
+---- --------------- ----------
+B004 Callan                 2.5
+B005 Smith                    3
+B001 Broker                   3
+B003 Wang            3.33333333
+B002 Buttler               3.75
+B006 Zillman                  4
+B009 Uppalapati               4
+B007 Lee                      4
+
+8 rows selected.
+
+SQL> spool off
+SQL> 
